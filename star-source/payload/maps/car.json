@@ -1,0 +1,22 @@
+{
+  "make": "hyundai",
+  "model": "neev",
+  "name": "Ioniq 5",
+  "region": "kor",
+  "firmware": "260902",
+  "products": ["NEEV.KOR.0000.V039.001.260902"],
+  "status": "probed",
+  "verified": null,
+  "files": {
+    "/system/app/ButtonSettings.odex": "ea2e733ea011d05246c76e1b1a9116ea"
+  },
+  "apps": ["buttonsettings"],
+  "app_files": {
+    "buttonsettings": {
+      "package": "com.android.buttonsettings",
+      "files": ["/system/app/ButtonSettings.odex"]
+    }
+  },
+  "by_reference": [],
+  "missing": {}
+}

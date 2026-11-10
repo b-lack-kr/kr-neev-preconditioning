@@ -9,16 +9,16 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <service android:name=".PreconditioningService" android:exported="false" />
+        <service android:name="kr.neev.preconditioning.PreconditioningService" android:exported="false" />
         <!-- BOOT_COMPLETED is a protected system broadcast; does nothing unless a schedule is stored. -->
-        <receiver android:name=".BootReceiver" android:exported="true">
+        <receiver android:name="kr.neev.preconditioning.BootReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
         <!-- MAIN/LAUNCHER only (no HOME category): Hyundai's launcher remains the home screen. -->
         <activity
-            android:name=".MainActivity"
+            android:name="kr.neev.preconditioning.MainActivity"
             android:configChanges="orientation|screenSize|keyboard|keyboardHidden|navigation|locale|uiMode|fontScale|layoutDirection"
             android:excludeFromRecents="true"
             android:exported="true"

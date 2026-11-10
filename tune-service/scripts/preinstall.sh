@@ -1,6 +1,6 @@
 #!/system/bin/sh
 # NEMESIS preinstall (root). Runs from NEMESIS's staging copy of this package,
-# before NEMESIS copies it into place and installs app/Launchpad.apk with pm
+# before NEMESIS copies it into place and installs app/Preconditioning.apk with pm
 # install. Exiting non-zero stops NEMESIS before it installs or records anything.
 #
 # A car without Launchpad 1.x has nothing to do here. If 1.x is there (its copy in

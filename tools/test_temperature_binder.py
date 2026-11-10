@@ -16,6 +16,8 @@ def java_tool(name):
 
 JAVAC, JAVA = java_tool('javac'), java_tool('java')
 work = ROOT/'build/temperature-contract'
+if work.exists():
+    shutil.rmtree(work)
 (work/'android/os').mkdir(parents=True, exist_ok=True)
 stubs = {
  'RemoteException': 'public class RemoteException extends Exception { public RemoteException(String s){super(s);} }',
@@ -38,9 +40,9 @@ stubs = {
 }
 for name, body in stubs.items():
     (work/'android/os'/f'{name}.java').write_text('package android.os;\n'+body)
-test = work/'com/paytondev/launchpad/TemperatureBinderTest.java'
+test = work/'kr/neev/preconditioning/TemperatureBinderTest.java'
 test.parent.mkdir(parents=True, exist_ok=True)
-test.write_text('''package com.paytondev.launchpad;
+test.write_text('''package kr.neev.preconditioning;
 import android.os.*;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -113,10 +115,10 @@ public class TemperatureBinderTest {
   System.out.println(passed+" Binder contract scenarios passed (host fixtures, no car access)");
  }
 }''')
-production = ROOT/'app/src/main/java/com/paytondev/launchpad'
+production = ROOT/'app/src/main/java/kr/neev/preconditioning'
 sources = [str(p) for p in work.rglob('*.java')]+[str(production/n) for n in ('BatteryTemperature.java','ClusterBatteryTemperatureReader.java')]
 classes=work/'classes';classes.mkdir(exist_ok=True)
 subprocess.run([JAVAC,'-d',str(classes),*sources],check=True,timeout=60)
-result=subprocess.run([JAVA,'-cp',str(classes),'com.paytondev.launchpad.TemperatureBinderTest'],check=True,capture_output=True,text=True,timeout=15)
+result=subprocess.run([JAVA,'-cp',str(classes),'kr.neev.preconditioning.TemperatureBinderTest'],check=True,capture_output=True,text=True,timeout=15)
 (work/'results.json').write_text(json.dumps({'passed':True,'scenarios':11,'scope':'host Binder fixtures, no car access','output':result.stdout},indent=2)+'\n')
 print(result.stdout)

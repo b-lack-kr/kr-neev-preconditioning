@@ -9,16 +9,16 @@ BT="$ANDROID_HOME/build-tools/${BUILD_TOOLS_VERSION:-36.0.0}"
 : "${LAUNCHPAD_KEYSTORE:?Set LAUNCHPAD_KEYSTORE to your private signing keystore}"
 : "${LAUNCHPAD_STORE_PASSWORD:?Set LAUNCHPAD_STORE_PASSWORD}"
 : "${LAUNCHPAD_KEY_PASSWORD:=$LAUNCHPAD_STORE_PASSWORD}"
-: "${LAUNCHPAD_KEY_ALIAS:=launchpad}"
+: "${LAUNCHPAD_KEY_ALIAS:=preconditioning}"
 export LAUNCHPAD_STORE_PASSWORD LAUNCHPAD_KEY_PASSWORD
 ./gradlew :app:testDebugUnitTest :app:lintRelease :app:assembleRelease
 mkdir -p dist
-python3 tools/kitkat_repackage.py app/build/outputs/apk/release/app-release-unsigned.apk dist/Launchpad-signing.apk
+python3 tools/kitkat_repackage.py app/build/outputs/apk/release/app-release-unsigned.apk dist/Preconditioning-signing.apk
 # Explicit v1 SHA1 signing preserves the existing API 19 packaging procedure.
 JARSIGNER=jarsigner
 [ -z "${JAVA_HOME:-}" ] || JARSIGNER="$JAVA_HOME/bin/jarsigner"
 "$JARSIGNER" -keystore "$LAUNCHPAD_KEYSTORE" -storepass:env LAUNCHPAD_STORE_PASSWORD \
     -keypass:env LAUNCHPAD_KEY_PASSWORD -digestalg SHA1 -sigalg SHA1withRSA \
-    dist/Launchpad-signing.apk "$LAUNCHPAD_KEY_ALIAS"
-"$BT/zipalign" -f 4 dist/Launchpad-signing.apk dist/Launchpad.apk
-"$BT/apksigner" verify --min-sdk-version 19 --verbose --print-certs dist/Launchpad.apk
+    dist/Preconditioning-signing.apk "$LAUNCHPAD_KEY_ALIAS"
+"$BT/zipalign" -f 4 dist/Preconditioning-signing.apk dist/Preconditioning.apk
+"$BT/apksigner" verify --min-sdk-version 19 --verbose --print-certs dist/Preconditioning.apk

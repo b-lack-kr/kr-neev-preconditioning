@@ -1,15 +1,15 @@
 #!/bin/sh
-# Write a Launchpad USB bundle onto a FAT32/exFAT drive. Runs on your computer;
+# Write a Preconditioning USB bundle onto a FAT32/exFAT drive. Runs on your computer;
 # does not connect to the car.
 #   tools/usb/write-usb.sh [--manual] /Volumes/USB [bundle-dir]
-# bundle-dir holds Launchpad-install-usb.zip, or Launchpad-manual-install-usb.zip with
+# bundle-dir holds Preconditioning-install-usb.zip, or Preconditioning-manual-install-usb.zip with
 # --manual for NEMESIS older than 1.16 (default: ./dist, then the current dir).
-# The same drive installs or updates Launchpad.
+# The same drive installs or updates Preconditioning.
 set -eu
 usage() { echo "usage: $0 [--manual] <usb-drive-path> [bundle-dir]" >&2; exit 2; }
-NAME=Launchpad-install-usb.zip
+NAME=Preconditioning-install-usb.zip
 if [ "${1:-}" = --manual ]; then
-    NAME=Launchpad-manual-install-usb.zip
+    NAME=Preconditioning-manual-install-usb.zip
     shift
 fi
 [ $# -ge 1 ] || usage
@@ -26,7 +26,7 @@ command -v unzip >/dev/null || { echo "unzip is required" >&2; exit 1; }
 
 # Move (never delete) anything from a previous NEMESIS job out of the drive root.
 BACKUP=$DRIVE/NEMESIS-backup-$(date +%Y%m%d-%H%M%S)
-for ITEM in NEMESIS.data NEMESIS.sh ota_package.tar README.txt launchpad packages; do
+for ITEM in NEMESIS.data NEMESIS.sh ota_package.tar README.txt preconditioning packages; do
     if [ -e "$DRIVE/$ITEM" ]; then
         mkdir -p "$BACKUP"
         mv "$DRIVE/$ITEM" "$BACKUP/"
@@ -37,14 +37,14 @@ done
 unzip -q "$ZIP" -d "$DRIVE"
 sync
 echo "Wrote $(basename "$ZIP") to $DRIVE:"
-(cd "$DRIVE" && ls -1d README.txt NEMESIS.data launchpad packages 2>/dev/null) || true
+(cd "$DRIVE" && ls -1d README.txt NEMESIS.data preconditioning packages 2>/dev/null) || true
 cat <<EOF
 
 Next:
   1. Eject the drive, insert it into the car's USB data port (car on, parked).
   2. Tap Yes on the NEMESIS install prompt (and on the update prompt, if
-     Launchpad is already installed), then wait for the result dialog.
+     Preconditioning is already installed), then wait for the result dialog.
   3. Reboot the head unit (pinhole button), then remove the drive.
   If it fails: NEMESIS Manager > Logs > Copy to USB writes NEMESIS-logs to the drive.
-  The manual drive also writes launchpad-install.log.
+  The manual drive also writes preconditioning-install.log.
 EOF

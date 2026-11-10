@@ -1,81 +1,83 @@
-Launchpad - install/update USB
+프리컨디셔닝 — 한국어·섭씨판 설치/업데이트 USB
 
-This drive installs Launchpad, or updates it in place if it is already
-installed. It needs NEMESIS 1.16 or newer, which installs the package itself.
-On an older NEMESIS, use Launchpad-manual-install-usb.zip instead. To remove Launchpad and its TUNE shortcut, use NEMESIS Manager ->
-Packages -> Precondition -> Uninstall; NEMESIS stays installed. There is no
-uninstall drive.
+NEMESIS 1.16 이상에서 사용합니다. 이전 버전은
+Preconditioning-manual-install-usb.zip을 사용하세요.
 
-BEFORE YOU BEGIN
-Use a maintainer release whose notes explicitly support your head unit and
-software. EV6 support was tested on a US 2023 EV6 Wind RWD, Gen5W software
-CV_E.USA.S5W_M.V015.012.260507. Ioniq 5 NEEV US support was tested on a US
-2022 Ioniq 5 SE AWD, software NEEV.USA.0000.V015.012.260507. Other matching
-cars and model years are untested.
-NEMESIS must already be installed. Engineering Mode is not needed for this step.
-Each release is signed with its own key. NEMESIS removes the old version
-before it installs the new one, and Launchpad saves its settings around that,
-so a different key does not block an update. Do not clear app data or change
-verifier settings.
+이 USB는 프리컨디셔닝 1.0.0 (한국어·섭씨)을 설치하거나
+기존 설치를 업데이트합니다. 원본 2.0.0 기반이며 앱의 온도는 섭씨(°C)로 표시합니다.
+2026-11-10 한국 아이오닉5 260902에서 설치·실행·한글9°C 표시를 확인했습니다.
+기존에 수동 설치한 ★ 모듈의 선택·실행은 확인했지만, 이 설치 파일의
+자동 ★ 통합 설치·업데이트·제거와 실제 배터리 가열은 아직 실차 미검증입니다.
 
-ON THE COMPUTER
-1. Use an empty FAT32 or exFAT USB, or back it up first.
-2. Move old NEMESIS.data, NEMESIS.sh, ota_package.tar, launchpad and packages
-   items off the drive so another installer cannot run by accident.
-3. Extract the outer ZIP. Copy its CONTENTS to the drive, not the outer folder.
-   NEMESIS.data and this README.txt must be visible immediately on opening it.
-   Leave packages/paytondev.launchpad.zip zipped.
-4. Safely eject the drive.
+지원 확인
+기기명·펌웨어·파일 지문이 원본 지원 프로필과 일치해야 시작할 수 있습니다.
+한국 아이오닉5: wp_daudioplus_neev_kr / NEEV.KOR.0000.V039.001.260902.
+한국 260902는 TUNE 길게 누르기를 지원하지 않습니다. NEMESIS Manager에서
+‘프리컨디셔닝’을 실행하세요. 다른 차량은 원본 COMPATIBILITY.md를 확인하세요.
+NEMESIS는 미리 설치되어 있어야 하며 이 단계에 엔지니어링 모드는 사용하지 않습니다.
 
-IN THE CAR
-1. Park and keep the car on READY. Wait for infotainment to finish starting.
-2. Before updating or uninstalling, Stop any pending or active manual session
-   and confirm Advanced shows Car indicator: Off. Closing Launchpad is not Stop.
-3. Insert the drive into the USB DATA port used for wired Android Auto/CarPlay.
-4. Accept the NEMESIS install prompt. If Launchpad is already installed,
-   NEMESIS then asks whether to update it; accept that too. If a prompt
-   expires, reinsert the drive. Do not use Engineering Mode or Run USB
-   NEMESIS.sh for this bundle.
-5. Wait for NEMESIS's result. On failure, follow the instructions below.
-6. After success, remove the drive and restart infotainment with its recessed
-   reset button. This is not a factory reset.
-7. After install/update, hold the right-hand TUNE knob for about one second to
-   open Launchpad. TUNE opens the screen; it does not begin heating. It is also
-   on NEMESIS Manager's home screen as Precondition.
+순정 ★ 버튼 자동 등록
+이 NEMESIS 설치 파일은 앱 설치 후 프리컨디셔닝 ★ 선택지 등록을 시도합니다.
+HMG-API 1.0.2, NEEV.KOR.0000.V039.001.260902 및 검증된 기본 매핑
+375개 등 설치기의 확인 조건이 맞아야 합니다. 다른 환경에서는 앱만 설치되고
+★ 등록은 되지 않을 수 있습니다. APK 직접 설치에는 자동 등록이 없습니다.
+설치·업데이트·제거는 Android가 완전히 부팅된 후 진행하고, 그동안 다른
+HMG-API 지도·모듈을 동시에 변경하지 마세요. 설치 후 재부팅하고 순정 ★
+설정에서 프리컨디셔닝을 선택하세요. 기존 순정 선택을 자동으로 바꾸지 않습니다.
+앱 설치 성공만으로 ★ 등록 성공을 보장하지 않으므로 설치 기록과 목록을 확인하세요.
 
-COMING FROM LAUNCHPAD 1.x
-Nothing extra to do. If 1.x is on the car, this drive moves your settings over
-and removes the old copy (/system/app/Launchpad.apk) in the same run. If you
-already removed 1.x with NEMESIS Manager, it still installs; your settings come
-along if infotainment has not restarted since.
+컴퓨터에서 준비
+1. 빈 FAT32 또는 exFAT USB를 사용하거나 기존 내용을 먼저 백업합니다.
+2. 기존 NEMESIS.data, NEMESIS.sh, ota_package.tar, preconditioning, packages를
+   USB 밖으로 옮겨 다른 설치 프로그램이 실행되지 않도록 합니다.
+3. 바깥쪽 ZIP을 풀고 폴더 안의 내용물을 USB 최상위에 복사합니다.
+   USB를 열었을 때 NEMESIS.data와 README.txt가 바로 보여야 합니다.
+   packages/kr.neev.preconditioning.zip은 압축을 풀지 않습니다.
+4. USB를 안전하게 제거합니다.
 
-USING PRECONDITIONING
-Enable Battery conditioning mode in the car's EV settings. Start requests
-conditioning; Request sent is not confirmation. Active means the car reports
-conditioning active. Stop cancels; wait for Session ended and Car indicator: Off.
-On supported EV6 and Ioniq 5 NEEV US software, Battery warm offers a
-ten-second reset or explicit Start anyway. The car still decides whether to
-activate. A request never seen Active has a five-minute cancellation timer;
-this has automated test coverage, but is not yet verified in-car. Active
-sessions do not use that timeout.
+차량에서 설치
+1. 주차한 상태에서 차량을 READY로 두고 Android 부팅이 완전히 끝날 때까지 기다립니다.
+2. 업데이트 전에는 대기/작동 중인 요청을 중지하고 차량 표시가 꺼졌는지 확인합니다.
+3. 유선 Android Auto/CarPlay용 USB 데이터 포트에 연결합니다.
+4. NEMESIS 설치 안내를 수락합니다. 기존 설치가 있으면 업데이트 안내도 수락합니다.
+   안내 시간이 만료되면 USB를 다시 연결합니다. 엔지니어링 모드나
+   Run USB NEMESIS.sh 메뉴는 이 설치에 사용하지 않습니다.
+5. 결과를 기다립니다. 성공하면 USB를 빼고 오디오의 작은 리셋 버튼으로
+   인포테인먼트를 재시작합니다. 공장 초기화가 아닙니다.
+6. 한국 아이오닉5 260902에서는 NEMESIS Manager의 ‘프리컨디셔닝’을
+   실행합니다. 홈 화면 또는 패키지 목록의 실행 메뉴를 사용하세요.
+   TUNE 지원 프로필에서만 TUNE을 약 1초 눌러 열 수 있습니다.
 
-Battery temp is the lowest reported battery-pack sensor, not outside temperature.
-It should resume updating when you return to Launchpad during a session. If it
-stays stale, reopen Launchpad. A stale value does not establish whether the
-battery is warm or conditioning is active.
+사용
+차량 EV 설정에서 배터리 컨디셔닝 모드를 켭니다. 앱의 시작 버튼은 차량에
+요청을 보내며, 요청 전송 표시는 실제 가열 확인이 아닙니다. 차량이 작동을
+확인한 뒤 활성 상태로 표시됩니다. 중지를 누르고 차량 표시가 꺼질 때까지
+기다리세요. 앱을 닫기만 해서는 요청이 중지되지 않습니다.
 
-IF IT FAILS
-Open NEMESIS Manager with three quick NAV presses, or three SETUP presses if
-you configured that shortcut. Use Logs -> Copy to USB and keep the NEMESIS-logs
-folder it writes to the drive. Do not repeatedly reinstall
-or clear app data. Report the release, model/year/market, full software version,
-action and error. Remove personal information before posting logs publicly.
-"No supported files" alone is a media-player message, not an installation result.
+한국 아이오닉5 260902는 최저 배터리 온도 21°C 이상에서 따뜻하다는 안내를
+표시하며, 진행을 선택해도 작동 여부는 차량이 결정합니다. 요청 후 2분 동안
+활성이 확인되지 않으면 요청을 취소합니다. 이미 활성화된 세션에는 이 제한을
+적용하지 않습니다. 다른 프로필은 온도 기준과 대기 시간이 다를 수 있습니다.
+배터리 온도는 팩 센서의 최저 온도로, 외기 온도와 다릅니다. 값이 오래되면
+현재 온도로 간주하지 말고 앱을 다시 열어 확인하세요.
 
-Full EV6 guide and release status:
-https://github.com/paytondevs/ioniq5-preconditioning
-Check the EV6-QUICK-START.md file in the source matching your release.
+업데이트·제거
+이 앱의 다음 버전은 같은 kr.neev.preconditioning ID로 업데이트하며 설정을 보존합니다.
+원본과 별개인 kr.neev.preconditioning 패키지로 설치합니다. 기존 원본
+배터리 컨디셔닝 앱이 있으면 작동을 중지하고 NEMESIS Manager에서 제거한 뒤
+설치하세요. 구형 Launchpad 1.x의 /system/app/Launchpad.apk는 설치 과정에서
+원본의 이전 절차에 따라 제거합니다.
+제거 전 컨디셔닝을 중지하고 본체·핸들 ★ 버튼에 프리컨디셔닝이 설정되어
+있다면 각각 순정 기능으로 바꿉니다. Android 부팅 완료 후 NEMESIS Manager ->
+패키지 -> 프리컨디셔닝 -> 제거를 사용하고 인포테인먼트를 재시작합니다.
+NEMESIS 자체는 유지되며 별도 제거 USB는 없습니다.
 
-Original app: paytondevs and contributors.
-EV6 development, documentation and vehicle testing: Abro86.
-Development, documentation and host-test assistance: OpenAI Codex.
+실패한 경우
+NEMESIS Manager -> Logs -> Copy to USB에서 NEMESIS-logs를 복사해 보관합니다.
+앱 데이터를 지우거나 반복 재설치하기보다 버전·차종·연식·지역·전체 소프트웨어
+버전·실행한 작업·오류를 함께 확인하세요. 공개 공유 전 개인정보를 점검하세요.
+‘지원되는 파일 없음’만으로 설치 실패를 판단하지 않습니다.
+
+원본: https://github.com/paytondevs/gen5w-preconditioning
+기반 커밋: 0e366bdaee2768131e00eba1a5333e961ffd879b
+원작: paytondevs 및 기여자. EV6 개발·문서·실차 시험: Abro86.

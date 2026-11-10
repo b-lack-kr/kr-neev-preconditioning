@@ -1,0 +1,17 @@
+출처 및 라이선스
+
+이 변경판은 paytondevs/gen5w-preconditioning을 바탕으로 작성했습니다.
+원본: https://github.com/paytondevs/gen5w-preconditioning
+기반 커밋: 0e366bdaee2768131e00eba1a5333e961ffd879b (원본 VERSION 2.0.0)
+원작: paytondevs 및 기여자. EV6 개발·문서·실차 시험: Abro86.
+한국어·섭씨 표시, 독립 패키지·이름·아이콘, 화면 단순화를 적용한 로컬 변경판입니다.
+원본 공식 한국어 배포를 뜻하지 않습니다.
+
+원본 커밋에는 프로젝트 전체에 적용되는 최상위 LICENSE 파일이 없습니다.
+전체 소스에 새 라이선스를 임의로 부여하지 않았습니다. 원본 문서와 고지를 보존했습니다.
+
+포함된 제3자 고지:
+- Phosphor Icons: MIT License (phosphor-LICENSE.txt)
+- Google Sans Flex: SIL Open Font License 1.1 (GoogleSansFlex-OFL.txt)
+  원본 글꼴 파일과 고지는 소스/APK에 보존되어 있습니다.
+원본 크레딧 전체는 README-upstream.md에 있습니다.

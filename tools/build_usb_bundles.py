@@ -7,7 +7,7 @@ import shutil
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE_ID = "paytondev.launchpad"
+PACKAGE_ID = "kr.neev.preconditioning"
 
 def pack(source, destination):
     with zipfile.ZipFile(destination, "w", zipfile.ZIP_DEFLATED) as archive:
@@ -36,8 +36,8 @@ def copy_lf(source, destination):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--apk", type=Path, default=ROOT / "dist/Launchpad.apk",
-                        help="Signed Launchpad APK (default: dist/Launchpad.apk from tools/build_apk.sh)")
+    parser.add_argument("--apk", type=Path, default=ROOT / "dist/Preconditioning.apk",
+                        help="Signed Preconditioning APK (default: dist/Preconditioning.apk from tools/build_apk.sh)")
     args = parser.parse_args()
     apk = args.apk.resolve()
     if not apk.is_file():
@@ -55,7 +55,12 @@ def main():
         if path.is_file():
             target = package / path.relative_to(ROOT / "tune-service")
             target.parent.mkdir(parents=True, exist_ok=True)
-            copy_lf(path, target)
+            # Signed payload, ZIP/JAR and DEX files are opaque bytes; converting
+            # CRLF here would invalidate signatures and executable assets.
+            if path.suffix in (".sh", ".conf", ".data"):
+                copy_lf(path, target)
+            else:
+                shutil.copy2(path, target)
     # The package version comes from /VERSION, like the APK's versionName.
     descriptor = package / "NEMESIS.data"
     text = descriptor.read_text(encoding="utf-8")
@@ -63,7 +68,7 @@ def main():
         raise SystemExit("tune-service/NEMESIS.data needs exactly one package-version=@VERSION@ line")
     descriptor.write_bytes(text.replace("@VERSION@", version).encode("utf-8"))
     (package / "app").mkdir()
-    shutil.copy2(apk, package / "app/Launchpad.apk")
+    shutil.copy2(apk, package / "app/Preconditioning.apk")
 
     dist = ROOT / "dist"
     dist.mkdir(exist_ok=True)
@@ -79,41 +84,41 @@ def main():
     shutil.copy2(package_zip, usb / f"packages/{PACKAGE_ID}.zip")
     (usb / "NEMESIS.data").write_bytes(
         f"[nemesis]\nversion=1.0\ntype=install\npath=packages/{PACKAGE_ID}.zip\n".encode("ascii"))
-    out = dist / "Launchpad-install-usb.zip"
+    out = dist / "Preconditioning-install-usb.zip"
     pack(usb, out)
 
     # Older NEMESIS: our install.sh runs the same install or update through
     # type=execute, logs to the drive and checks the result.
     manual = stage / "manual-install"
-    scripts = manual / "launchpad"
+    scripts = manual / "preconditioning"
     scripts.mkdir(parents=True)
     copy_lf(ROOT / "tune-service/scripts/common.sh", scripts / "common.sh")
-    copy_lf(ROOT / "usb/launchpad/lib.sh", scripts / "lib.sh")
-    copy_lf(ROOT / "usb/launchpad/install.sh", scripts / "install.sh")
+    copy_lf(ROOT / "usb/preconditioning/lib.sh", scripts / "lib.sh")
+    copy_lf(ROOT / "usb/preconditioning/install.sh", scripts / "install.sh")
     copy_lf(ROOT / "usb/README-manual-template.txt", manual / "README.txt")
     (manual / "packages").mkdir()
     shutil.copy2(package_zip, manual / f"packages/{PACKAGE_ID}.zip")
     (manual / "NEMESIS.data").write_bytes(
-        b"[nemesis]\nversion=1.0\ntype=execute\npath=launchpad/install.sh\n")
-    manual_out = dist / "Launchpad-manual-install-usb.zip"
+        b"[nemesis]\nversion=1.0\ntype=execute\npath=preconditioning/install.sh\n")
+    manual_out = dist / "Preconditioning-manual-install-usb.zip"
     pack(manual, manual_out)
 
     # The porting kit only reads: no package, so nothing for NEMESIS to install.
     # The same signed APK goes along purely as PortProbe's dex container.
     kit = stage / "port-kit"
-    kit_scripts = kit / "launchpad-port"
+    kit_scripts = kit / "preconditioning-port"
     kit_scripts.mkdir(parents=True)
     collect = (ROOT / "usb/port-kit/collect.sh").read_bytes().replace(b"\r\n", b"\n")
     if collect.count(b"\nKIT_VERSION=@VERSION@\n") != 1:
         raise SystemExit("usb/port-kit/collect.sh needs exactly one KIT_VERSION=@VERSION@ line")
     (kit_scripts / "collect.sh").write_bytes(collect.replace(b"@VERSION@", version.encode("ascii")))
     copy_lf(ROOT / "tune-service/scripts/common.sh", kit_scripts / "common.sh")
-    copy_lf(ROOT / "usb/launchpad/lib.sh", kit_scripts / "lib.sh")
-    shutil.copy2(apk, kit_scripts / "Launchpad.apk")
+    copy_lf(ROOT / "usb/preconditioning/lib.sh", kit_scripts / "lib.sh")
+    shutil.copy2(apk, kit_scripts / "Preconditioning.apk")
     copy_lf(ROOT / "usb/port-kit/README-template.txt", kit / "README.txt")
     (kit / "NEMESIS.data").write_bytes(
-        b"[nemesis]\nversion=1.0\ntype=execute\npath=launchpad-port/collect.sh\n")
-    kit_out = dist / "Launchpad-port-kit-usb.zip"
+        b"[nemesis]\nversion=1.0\ntype=execute\npath=preconditioning-port/collect.sh\n")
+    kit_out = dist / "Preconditioning-port-kit-usb.zip"
     pack(kit, kit_out)
     print(out)
     print(manual_out)

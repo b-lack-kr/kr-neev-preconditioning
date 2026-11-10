@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class UsbBundleTest(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(prefix="launchpad-bundles-")
+        self.temp = tempfile.TemporaryDirectory(prefix="preconditioning-bundles-")
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         for folder in ("tools", "usb", "tune-service"):
@@ -44,61 +44,69 @@ class UsbBundleTest(unittest.TestCase):
 
     def test_bundle_matches_descriptor_and_payload(self):
         # Exercise LF conversion as well as normal Windows source checkouts.
-        for source in (self.root / "usb/README-template.txt", self.root / "usb/launchpad/install.sh"):
+        for source in (self.root / "usb/README-template.txt", self.root / "usb/preconditioning/install.sh"):
             source.write_bytes(source.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
+        # Signed binary assets must survive exact byte-for-byte, including CRLF.
+        signature = self.root / "tune-service/star/kit/payload/mod/META-HMGAPI/signature"
+        signature.write_bytes(signature.read_bytes() + b"\r\n\0fixture")
         result = self.build({"classes.dex": b"fixture-not-dex", "META-INF/TEST.RSA": b"not-a-signature"})
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        package_bytes = (self.root / "dist/paytondev.launchpad.zip").read_bytes()
+        package_bytes = (self.root / "dist/kr.neev.preconditioning.zip").read_bytes()
         with zipfile.ZipFile(io.BytesIO(package_bytes)) as package:
-            self.assertEqual(package.read("app/Launchpad.apk"), self.apk.read_bytes())
+            self.assertEqual(package.read("app/Preconditioning.apk"), self.apk.read_bytes())
             expected = {p.relative_to(self.root / "tune-service").as_posix()
                         for p in (self.root / "tune-service").rglob("*") if p.is_file()}
-            self.assertEqual(set(package.namelist()), expected | {"app/Launchpad.apk"})
+            self.assertEqual(set(package.namelist()), expected | {"app/Preconditioning.apk"})
             for name in expected:
-                self.assertNotIn(b"\r", package.read(name), name)
+                source = self.root / "tune-service" / name
+                if source.suffix in (".sh", ".conf", ".data"):
+                    self.assertNotIn(b"\r", package.read(name), name)
+                else:
+                    self.assertEqual(package.read(name), source.read_bytes(), name)
             descriptor = package.read("NEMESIS.data").decode()
             self.assertIn("\nversion=1.1\n", descriptor)
             self.assertIn("\npackage-version=4.5.6\n", descriptor)
             self.assertNotIn("@VERSION@", descriptor)
             # NEMESIS installs the APK with pm install, so Android and NEMESIS
             # Manager's app grid see a normal app; preinstall moves 1.x out of the way.
-            self.assertIn("\n[app.0]\nkind=apk\npath=app/Launchpad.apk\npackage=com.paytondev.precondition\n"
-                          "component=com.paytondev.precondition/com.paytondev.launchpad.MainActivity\n", descriptor)
+            self.assertIn("\n[app.0]\nkind=apk\npath=app/Preconditioning.apk\npackage=kr.neev.preconditioning\n"
+                          "component=kr.neev.preconditioning/kr.neev.preconditioning.MainActivity\n", descriptor)
             self.assertIn("\npreinstall=scripts/preinstall.sh\n", descriptor)
-            # Shown in NEMESIS Manager; the id stays so updates from 1.x still match.
-            self.assertIn("\nid=paytondev.launchpad\nname=Precondition\n", descriptor)
+            # Independent NEMESIS and Android identity; future updates retain this ID.
+            self.assertIn("\nid=kr.neev.preconditioning\nname=프리컨디셔닝\n", descriptor)
+            self.assertIn('\nshort-desc="아이오닉5 프리컨디셔닝"\n', descriptor)
             self.assertIn("scripts/preinstall.sh", package.namelist())
             self.assertNotIn("bin/open.sh", package.namelist())
         # Two bundles install or update (NEMESIS 1.16+, and manual for any NEMESIS);
         # uninstall is NEMESIS Manager's button. The third is the read-only porting kit.
-        self.assertEqual(sorted(p.name for p in (self.root / "dist").glob("Launchpad-*-usb.zip")),
-                         ["Launchpad-install-usb.zip", "Launchpad-manual-install-usb.zip",
-                          "Launchpad-port-kit-usb.zip"])
-        with zipfile.ZipFile(self.root / "dist/Launchpad-install-usb.zip") as bundle:
+        self.assertEqual(sorted(p.name for p in (self.root / "dist").glob("Preconditioning-*-usb.zip")),
+                         ["Preconditioning-install-usb.zip", "Preconditioning-manual-install-usb.zip",
+                          "Preconditioning-port-kit-usb.zip"])
+        with zipfile.ZipFile(self.root / "dist/Preconditioning-install-usb.zip") as bundle:
             # No scripts of our own: NEMESIS installs or updates the package itself.
-            expected = {"README.txt", "NEMESIS.data", "packages/paytondev.launchpad.zip"}
+            expected = {"README.txt", "NEMESIS.data", "packages/kr.neev.preconditioning.zip"}
             self.assertEqual(set(bundle.namelist()), expected)
-            self.assertEqual(bundle.read("packages/paytondev.launchpad.zip"), package_bytes)
+            self.assertEqual(bundle.read("packages/kr.neev.preconditioning.zip"), package_bytes)
             self.assertEqual(bundle.read("NEMESIS.data").decode(),
-                             "[nemesis]\nversion=1.0\ntype=install\npath=packages/paytondev.launchpad.zip\n")
+                             "[nemesis]\nversion=1.0\ntype=install\npath=packages/kr.neev.preconditioning.zip\n")
             readme = bundle.read("README.txt").decode("utf-8")
-            self.assertIn("Launchpad - install/update USB", readme)
-            self.assertIn("NEMESIS 1.16 or newer", readme)
-            self.assertNotIn("launchpad-install.log", readme)
-            for name in expected - {"packages/paytondev.launchpad.zip"}:
+            self.assertIn("프리컨디셔닝 — 한국어·섭씨판 설치/업데이트 USB", readme)
+            self.assertIn("NEMESIS 1.16 이상", readme)
+            self.assertNotIn("preconditioning-install.log", readme)
+            for name in expected - {"packages/kr.neev.preconditioning.zip"}:
                 self.assertNotIn(b"\r", bundle.read(name), name)
-        with zipfile.ZipFile(self.root / "dist/Launchpad-manual-install-usb.zip") as bundle:
-            expected = {"README.txt", "NEMESIS.data", "launchpad/common.sh",
-                        "launchpad/lib.sh", "launchpad/install.sh",
-                        "packages/paytondev.launchpad.zip"}
+        with zipfile.ZipFile(self.root / "dist/Preconditioning-manual-install-usb.zip") as bundle:
+            expected = {"README.txt", "NEMESIS.data", "preconditioning/common.sh",
+                        "preconditioning/lib.sh", "preconditioning/install.sh",
+                        "packages/kr.neev.preconditioning.zip"}
             self.assertEqual(set(bundle.namelist()), expected)
-            self.assertEqual(bundle.read("packages/paytondev.launchpad.zip"), package_bytes)
+            self.assertEqual(bundle.read("packages/kr.neev.preconditioning.zip"), package_bytes)
             self.assertEqual(bundle.read("NEMESIS.data").decode(),
-                             "[nemesis]\nversion=1.0\ntype=execute\npath=launchpad/install.sh\n")
+                             "[nemesis]\nversion=1.0\ntype=execute\npath=preconditioning/install.sh\n")
             readme = bundle.read("README.txt").decode("utf-8")
-            self.assertIn("Launchpad - manual install/update USB", readme)
-            self.assertIn("launchpad-install.log", readme)
-            for name in expected - {"packages/paytondev.launchpad.zip"}:
+            self.assertIn("프리컨디셔닝 — 한국어·섭씨판 수동 설치/업데이트 USB", readme)
+            self.assertIn("preconditioning-install.log", readme)
+            for name in expected - {"packages/kr.neev.preconditioning.zip"}:
                 self.assertNotIn(b"\r", bundle.read(name), name)
 
     def test_os_lists_every_profile_software(self):
@@ -108,7 +116,7 @@ class UsbBundleTest(unittest.TestCase):
         # NEMESIS refuses an os value of 256 characters or more.
         self.assertLess(len(value), 256)
         patterns = [item.strip() for item in value.split(",")]
-        profile = (ROOT / "app/src/main/java/com/paytondev/launchpad/PreconditioningProfile.java").read_text()
+        profile = (ROOT / "app/src/main/java/kr/neev/preconditioning/PreconditioningProfile.java").read_text()
         software = re.findall(r'static final String \w+_SOFTWARE = "([^"]+)"', profile)
         self.assertTrue(software)
         for name in software:
@@ -120,27 +128,27 @@ class UsbBundleTest(unittest.TestCase):
         source.write_bytes(source.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
         result = self.build({"classes.dex": b"fixture-not-dex", "META-INF/TEST.RSA": b"not-a-signature"})
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        with zipfile.ZipFile(self.root / "dist/Launchpad-port-kit-usb.zip") as kit:
-            expected = {"README.txt", "NEMESIS.data", "launchpad-port/collect.sh",
-                        "launchpad-port/common.sh", "launchpad-port/lib.sh",
-                        "launchpad-port/Launchpad.apk"}
+        with zipfile.ZipFile(self.root / "dist/Preconditioning-port-kit-usb.zip") as kit:
+            expected = {"README.txt", "NEMESIS.data", "preconditioning-port/collect.sh",
+                        "preconditioning-port/common.sh", "preconditioning-port/lib.sh",
+                        "preconditioning-port/Preconditioning.apk"}
             # No packages/ folder: the kit has nothing NEMESIS could install.
             self.assertEqual(set(kit.namelist()), expected)
-            self.assertEqual(kit.read("launchpad-port/Launchpad.apk"), self.apk.read_bytes())
+            self.assertEqual(kit.read("preconditioning-port/Preconditioning.apk"), self.apk.read_bytes())
             self.assertEqual(kit.read("NEMESIS.data").decode(),
-                             "[nemesis]\nversion=1.0\ntype=execute\npath=launchpad-port/collect.sh\n")
-            collect = kit.read("launchpad-port/collect.sh").decode()
+                             "[nemesis]\nversion=1.0\ntype=execute\npath=preconditioning-port/collect.sh\n")
+            collect = kit.read("preconditioning-port/collect.sh").decode()
             self.assertIn("\nKIT_VERSION=4.5.6\n", collect)
             self.assertNotIn("@VERSION@", collect)
             for word in ('"$NEMESIS" install', "remount rw", "system_rw", "/system/app"):
                 self.assertNotIn(word, collect)
-            self.assertEqual(kit.read("launchpad-port/common.sh"),
+            self.assertEqual(kit.read("preconditioning-port/common.sh"),
                              (self.root / "tune-service/scripts/common.sh").read_bytes().replace(b"\r\n", b"\n"))
             readme = kit.read("README.txt").decode("utf-8")
-            self.assertIn("vehicle porting kit", readme)
-            self.assertIn("launchpad-port-report.txt", readme)
+            self.assertIn("차량 호환성 수집 USB", readme)
+            self.assertIn("preconditioning-port-report.txt", readme)
             self.assertIn("template=vehicle-port.yml", readme)
-            for name in expected - {"launchpad-port/Launchpad.apk"}:
+            for name in expected - {"preconditioning-port/Preconditioning.apk"}:
                 self.assertNotIn(b"\r", kit.read(name), name)
 
     def test_reject_port_kit_without_version_placeholder(self):
@@ -169,7 +177,7 @@ class UsbBundleTest(unittest.TestCase):
         self.assertIn("has no classes.dex", result.stderr)
         self.assertFalse((self.root / "dist").exists())
 
-    def check_writer(self, command, bundle="Launchpad-install-usb.zip"):
+    def check_writer(self, command, bundle="Preconditioning-install-usb.zip"):
         result = self.build({"classes.dex": b"fixture-not-dex", "META-INF/TEST.RSA": b"not-a-signature"})
         self.assertEqual(result.returncode, 0, result.stderr)
         drive = self.root / "fixture-drive"
@@ -215,7 +223,7 @@ class UsbBundleTest(unittest.TestCase):
         if os.name == "nt" or not bash:
             self.skipTest("Bash is not installed")
         self.check_writer(lambda drive: [bash, str(self.root / "tools/usb/write-usb.sh"), "--manual",
-            str(drive), str(self.root / "dist")], bundle="Launchpad-manual-install-usb.zip")
+            str(drive), str(self.root / "dist")], bundle="Preconditioning-manual-install-usb.zip")
 
 
 class CollectScriptTest(unittest.TestCase):
@@ -224,7 +232,7 @@ class CollectScriptTest(unittest.TestCase):
         self.bash = shutil.which("bash")
         if os.name == "nt" or not self.bash:
             self.skipTest("Bash with POSIX paths is required")
-        self.temp = tempfile.TemporaryDirectory(prefix="launchpad-collect-")
+        self.temp = tempfile.TemporaryDirectory(prefix="preconditioning-collect-")
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.drive = self.root / "drive"
@@ -245,7 +253,7 @@ class CollectScriptTest(unittest.TestCase):
             tool.chmod(0o755)
 
     def run_collect(self):
-        return subprocess.run([self.bash, str(self.drive / "launchpad-collect/collect.sh")],
+        return subprocess.run([self.bash, str(self.drive / "preconditioning-collect/collect.sh")],
             capture_output=True, text=True, timeout=30, cwd=self.drive,
             env=dict(os.environ, COLLECT_PATH=f"{self.bin}:/usr/bin:/bin",
                      COLLECT_FRAMEWORK=str(self.framework), BOOTCLASSPATH="/system/framework/core.jar"))
@@ -253,13 +261,13 @@ class CollectScriptTest(unittest.TestCase):
     def test_descriptor_runs_the_collect_script(self):
         descriptor = (self.drive / "NEMESIS.data").read_text()
         self.assertIn("type=execute", descriptor)
-        self.assertIn("path=launchpad-collect/collect.sh", descriptor)
+        self.assertIn("path=preconditioning-collect/collect.sh", descriptor)
 
     def test_copies_framework_files_and_identifiers_only_to_the_drive(self):
         before = {p: p.read_bytes() for p in self.framework.iterdir() if p.is_file()}
         result = self.run_collect()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        outputs = list(self.drive.glob("launchpad-collect-*"))
+        outputs = list(self.drive.glob("preconditioning-collect-*"))
         self.assertEqual(len(outputs), 1)
         out = outputs[0]
         self.assertEqual(sorted(p.name for p in (out / "framework").iterdir()),
@@ -269,7 +277,7 @@ class CollectScriptTest(unittest.TestCase):
         self.assertIn("ro.product.device", (out / "props.txt").read_text())
         self.assertIn("IClusterService", (out / "services.txt").read_text())
         self.assertIn("core.jar", (out / "bootclasspath.txt").read_text())
-        self.assertIn("SUCCESS", (self.drive / "launchpad-collect.log").read_text())
+        self.assertIn("SUCCESS", (self.drive / "preconditioning-collect.log").read_text())
         # The source tree is untouched.
         self.assertEqual({p: p.read_bytes() for p in self.framework.iterdir() if p.is_file()}, before)
 
@@ -277,7 +285,7 @@ class CollectScriptTest(unittest.TestCase):
         (self.framework / "automotive-service.odex").unlink()
         result = self.run_collect()
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-        self.assertIn("automotive-service.odex not collected", (self.drive / "launchpad-collect.log").read_text())
+        self.assertIn("automotive-service.odex not collected", (self.drive / "preconditioning-collect.log").read_text())
 
 
 if __name__ == "__main__":

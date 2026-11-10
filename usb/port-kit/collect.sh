@@ -1,19 +1,19 @@
 #!/system/bin/sh
 # NEMESIS type=execute: the read-only vehicle porting kit. Writes
-# launchpad-port-report.txt to the USB drive for a vehicle port request.
+# preconditioning-port-report.txt to the USB drive for a vehicle port request.
 # It installs nothing, never remounts /system and never sends a vehicle command.
-# The bundled Launchpad.apk is not installed: a copy in $PROBE_WORK is only the
+# The bundled Preconditioning.apk is not installed: a copy in $PROBE_WORK is only the
 # dex container for PortProbe, and is removed again with its dalvik-cache entry.
-SUCCESS_HINT="Report saved to launchpad-port-report.txt on the USB drive. No reboot needed."
+SUCCESS_HINT="Report saved to preconditioning-port-report.txt on the USB drive. No reboot needed."
 . "${0%/*}/lib.sh"
 KIT_VERSION=@VERSION@
-REPORT=$USBROOT/launchpad-port-report.txt
+REPORT=$USBROOT/preconditioning-port-report.txt
 FRAMEWORK_DIR=/system/framework
 INPUT_DEVICES=/proc/bus/input/devices
-PROBE_APK=$LIBDIR/Launchpad.apk
-PROBE_WORK=/data/local/tmp/launchpad-port
-PROBE_DEX=$PROBE_WORK/Launchpad.apk
-PROBE_CACHE=/data/dalvik-cache/data@local@tmp@launchpad-port@Launchpad.apk@classes.dex
+PROBE_APK=$LIBDIR/Preconditioning.apk
+PROBE_WORK=/data/local/tmp/preconditioning-port
+PROBE_DEX=$PROBE_WORK/Preconditioning.apk
+PROBE_CACHE=/data/dalvik-cache/data@local@tmp@preconditioning-port@Preconditioning.apk@classes.dex
 CAPTURE_SECONDS=30
 
 section() { echo; echo "[$1]"; }
@@ -27,7 +27,7 @@ cleanup_probe() {
 [ -f "$REPORT" ] && mv "$REPORT" "$REPORT.old" && say "previous report kept as $REPORT.old"
 
 {
-    echo "# Launchpad vehicle porting kit report"
+    echo "# Preconditioning vehicle porting kit report"
     echo "# Read-only: nothing on the car was installed or changed."
     echo "# Attach this file to a \"Vehicle port request\" issue on GitHub."
     section kit
@@ -84,7 +84,7 @@ chmod 0644 "$PROBE_DEX"
 load_boot_env
 export CLASSPATH="$PROBE_DEX"
 say "Optional: hold the right-hand TUNE knob for about 2 seconds, let go, and repeat until the result appears (about $CAPTURE_SECONDS seconds)."
-run app_process /system/bin --nice-name=launchpad-port-probe com.paytondev.launchpad.PortProbe \
+run app_process /system/bin --nice-name=preconditioning-port-probe kr.neev.preconditioning.PortProbe \
     "$REPORT" "$CAPTURE_SECONDS"
 RC=$?
 cleanup_probe

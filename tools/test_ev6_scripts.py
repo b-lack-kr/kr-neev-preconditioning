@@ -91,7 +91,7 @@ class Ev6ScriptsTest(unittest.TestCase):
             ("other", "CVEV.KOR.0000.V039.001.260902", "19", ioniq5_neev23_us),
             ("", "", "", ioniq5_neev23_us),
         ]
-        with tempfile.TemporaryDirectory(prefix="launchpad-tune-") as tmp:
+        with tempfile.TemporaryDirectory(prefix="preconditioning-tune-") as tmp:
             script = Path(tmp) / "profile.sh"
             script.write_text('''getprop() {
  case "$1" in
@@ -107,15 +107,15 @@ printf '%s|%s|%s|%s' "$DEVICE_NAME" "$KEY_CODE" "$HOLD_MS" "$TARGET_COMPONENT"
                 with self.subTest(device=device, software=software, sdk=sdk):
                     result = run(script, TEST_DEVICE=device, TEST_SOFTWARE=software, TEST_SDK=sdk)
                     self.assertEqual(result.returncode, 0, result.stderr)
-                    self.assertEqual(result.stdout, expected + "|17|800|com.paytondev.precondition/com.paytondev.launchpad.MainActivity")
+                    self.assertEqual(result.stdout, expected + "|17|800|kr.neev.preconditioning/kr.neev.preconditioning.MainActivity")
 
     def run_port_kit(self, folder, probe_rc="0"):
         """Run the real collect.sh from a fixture USB with every car command mocked."""
         usb = folder / "usb"
-        kit = usb / "launchpad-port"
+        kit = usb / "preconditioning-port"
         if not kit.exists():
             kit.mkdir(parents=True)
-            (kit / "Launchpad.apk").write_bytes(b"probe dex container")
+            (kit / "Preconditioning.apk").write_bytes(b"probe dex container")
             (folder / "framework").mkdir()
             (folder / "framework/automotive.odex").write_bytes(b"odex")
             (folder / "devices").write_text(
@@ -126,18 +126,18 @@ printf '%s|%s|%s|%s' "$DEVICE_NAME" "$KEY_CODE" "$HOLD_MS" "$TARGET_COMPONENT"
                 newline="\n")
             nemesis = folder / "nemesis"
             nemesis.write_text('#!/bin/sh\necho "$*" >> "$TEST_FOLDER/nemesis-calls"\n'
-                               'echo "paytondev.launchpad|1.3.0"\n', newline="\n")
+                               'echo "kr.neev.preconditioning|1.3.0"\n', newline="\n")
             nemesis.chmod(0o755)
             collect = (ROOT / "usb/port-kit/collect.sh").read_text().replace("@VERSION@", "9.8.7")
             for name, value in (("FRAMEWORK_DIR=/system/framework", folder / "framework"),
                                 ("INPUT_DEVICES=/proc/bus/input/devices", folder / "devices"),
-                                ("PROBE_WORK=/data/local/tmp/launchpad-port", folder / "work"),
-                                ("PROBE_CACHE=/data/dalvik-cache/data@local@tmp@launchpad-port@Launchpad.apk@classes.dex",
+                                ("PROBE_WORK=/data/local/tmp/preconditioning-port", folder / "work"),
+                                ("PROBE_CACHE=/data/dalvik-cache/data@local@tmp@preconditioning-port@Preconditioning.apk@classes.dex",
                                  folder / "cache.dex")):
                 self.assertIn(name, collect)
                 collect = collect.replace(name, name.split("=")[0] + "=" + quote(value))
             (kit / "collect.sh").write_text(collect, newline="\n")
-            (kit / "lib.sh").write_text((ROOT / "usb/launchpad/lib.sh").read_text(), newline="\n")
+            (kit / "lib.sh").write_text((ROOT / "usb/preconditioning/lib.sh").read_text(), newline="\n")
             common = (ROOT / "tune-service/scripts/common.sh").read_text()
             common = common.replace("NEMESIS=/system/xbin/nemesis", "NEMESIS=" + quote(nemesis))
             common = common.replace("BOOT_ENV=/init.environ.rc", "BOOT_ENV=" + quote(folder / "environ.rc"))
@@ -164,7 +164,7 @@ sleep() { :; }
 cmp() { case "$1" in -*) echo 'toolbox cmp rejects options' >&2; return 2 ;; esac; command cmp "$@"; }
 app_process() {
  echo "$CLASSPATH|$BOOTCLASSPATH|$*" >> "$TEST_FOLDER/probe-calls"
- cmp "$CLASSPATH" "$TEST_FOLDER/usb/launchpad-port/Launchpad.apk" || return 3
+ cmp "$CLASSPATH" "$TEST_FOLDER/usb/preconditioning-port/Preconditioning.apk" || return 3
  printf '\\n[end]\\nprobe_complete=yes\\n' >> "$4"
  return "$TEST_PROBE_RC"
 }
@@ -174,11 +174,11 @@ app_process() {
         return run(kit / "collect.sh", TEST_FOLDER=shell_path(folder), TEST_PROBE_RC=probe_rc)
 
     def test_port_kit_collects_a_filtered_report_and_cleans_up(self):
-        with tempfile.TemporaryDirectory(prefix="launchpad-port-") as tmp:
+        with tempfile.TemporaryDirectory(prefix="preconditioning-port-") as tmp:
             folder = Path(tmp)
             result = self.run_port_kit(folder)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            report = (folder / "usb/launchpad-port-report.txt").read_text()
+            report = (folder / "usb/preconditioning-port-report.txt").read_text()
             for section in ("[kit]", "[identity]", "[framework_files]", "[services]",
                             "[input]", "[nemesis]", "[end]"):
                 self.assertIn(section, report)
@@ -196,42 +196,42 @@ app_process() {
             self.assertEqual((folder / "nemesis-calls").read_text().splitlines(), ["pkg-list"])
             calls = (folder / "probe-calls").read_text().splitlines()
             self.assertEqual(len(calls), 1)
-            self.assertTrue(calls[0].endswith("|/system/bin --nice-name=launchpad-port-probe "
-                                              "com.paytondev.launchpad.PortProbe "
-                                              + shell_path(folder / "usb/launchpad-port-report.txt") + " 30"),
+            self.assertTrue(calls[0].endswith("|/system/bin --nice-name=preconditioning-port-probe "
+                                              "kr.neev.preconditioning.PortProbe "
+                                              + shell_path(folder / "usb/preconditioning-port-report.txt") + " 30"),
                             calls[0])
             self.assertIn("|/system/framework/core.jar|", calls[0])
             self.assertFalse((folder / "work").exists())
             self.assertFalse((folder / "cache.dex").exists())
-            log = (folder / "usb/launchpad-collect.log").read_text()
-            self.assertIn("SUCCESS. Report saved to launchpad-port-report.txt", log)
+            log = (folder / "usb/preconditioning-collect.log").read_text()
+            self.assertIn("SUCCESS. Report saved to preconditioning-port-report.txt", log)
             self.assertNotIn("Reboot", log)
             # A second run keeps the first report.
             result = self.run_port_kit(folder)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertEqual((folder / "usb/launchpad-port-report.txt.old").read_text(), report)
+            self.assertEqual((folder / "usb/preconditioning-port-report.txt.old").read_text(), report)
 
     def test_port_kit_failed_probe_still_cleans_up(self):
-        with tempfile.TemporaryDirectory(prefix="launchpad-port-") as tmp:
+        with tempfile.TemporaryDirectory(prefix="preconditioning-port-") as tmp:
             folder = Path(tmp)
             result = self.run_port_kit(folder, probe_rc="1")
             self.assertNotEqual(result.returncode, 0)
-            self.assertIn("[identity]", (folder / "usb/launchpad-port-report.txt").read_text())
+            self.assertIn("[identity]", (folder / "usb/preconditioning-port-report.txt").read_text())
             self.assertFalse((folder / "work").exists())
             self.assertFalse((folder / "cache.dex").exists())
-            self.assertIn("FAILED.", (folder / "usb/launchpad-collect.log").read_text())
+            self.assertIn("FAILED.", (folder / "usb/preconditioning-collect.log").read_text())
 
 
 
-APP = "com.paytondev.precondition"
+APP = "kr.neev.preconditioning"
 LEGACY = "com.paytondev.launchpad"
-SERVICE = APP + "/com.paytondev.launchpad.PreconditioningService"
-USER_APK = "/data/app/com.paytondev.precondition-1.apk"
+SERVICE = APP + "/kr.neev.preconditioning.PreconditioningService"
+USER_APK = "/data/app/kr.neev.preconditioning-1.apk"
 PREFS = ("launchpad.xml", "launchpad.xml.bak", "launchpad_preconditioning.xml")
 # Car commands the hooks use, stubbed and recorded in $TEST_FOLDER.
 HOOK_STUBS = r"""
 export PATH=/usr/bin:/bin
-getprop() { [ "$1" = sys.boot_completed ] && echo "${TEST_BOOT:-1}"; }
+getprop() { case "$1" in sys.boot_completed) echo "${TEST_BOOT:-1}";; ro.build.product) echo "${TEST_PRODUCT:-other}";; esac; }
 system_rw() { [ "$TEST_RW" = fail ] && return 1; echo rw >> "$TEST_FOLDER/remounts"; }
 system_restore() { echo ro >> "$TEST_FOLDER/remounts"; }
 pm() { echo "pm $*" >> "$TEST_FOLDER/calls"; [ -n "$TEST_PM_PATH" ] && echo "package:$TEST_PM_PATH"; return 0; }
@@ -250,8 +250,8 @@ FAKE_NEMESIS = """#!/bin/sh
 echo "$*" >> "$TEST_FOLDER/nemesis-calls"
 case "$1" in
 install) : > "$TEST_FOLDER/registered" ;;
-pkg-list) [ -n "$TEST_PKG_INSTALLED" ] || [ -f "$TEST_FOLDER/registered" ] && echo "paytondev.launchpad|1.7.0" ;;
-service) echo "paytondev.launchpad/knobd|restart|running|42" ;;
+pkg-list) [ -n "$TEST_PKG_INSTALLED" ] || [ -f "$TEST_FOLDER/registered" ] && echo "kr.neev.preconditioning|1.7.0" ;;
+service) echo "kr.neev.preconditioning/knobd|restart|running|42" ;;
 esac
 exit 0
 """
@@ -262,7 +262,7 @@ class PackageHooksTest(unittest.TestCase):
     tree. Every /system, /data and Android path is redirected there."""
 
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(prefix="launchpad-hooks-")
+        self.temp = tempfile.TemporaryDirectory(prefix="preconditioning-hooks-")
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.scripts = self.root / "package/scripts"
@@ -271,7 +271,7 @@ class PackageHooksTest(unittest.TestCase):
         self.system_apk.parent.mkdir(parents=True)
         self.app_data = self.root / "data/data" / APP
         self.legacy_data = self.root / "data/data" / LEGACY
-        self.backup = self.root / "data/nemesis/backup/paytondev.launchpad"
+        self.backup = self.root / "data/nemesis/backup/kr.neev.preconditioning"
         self.prefs_backup = self.backup / "prefs"
         self.work = self.root / "work"
         self.stage = self.root / "stage"
@@ -282,20 +282,24 @@ class PackageHooksTest(unittest.TestCase):
         common = (ROOT / "tune-service/scripts/common.sh").read_text()
         for line, value in (
                 ("NEMESIS=/system/xbin/nemesis", nemesis),
-                ("HERE=/data/nemesis/apps/paytondev.launchpad", self.root / "package"),
-                ("DEXCACHE=/data/dalvik-cache/data@nemesis@apps@paytondev.launchpad@app@Launchpad.apk@classes.dex",
+                ("HERE=/data/nemesis/apps/kr.neev.preconditioning", self.root / "package"),
+                ("DEXCACHE=/data/dalvik-cache/data@nemesis@apps@kr.neev.preconditioning@app@Preconditioning.apk@classes.dex",
                  self.dexcache),
                 ("APP_DATA=/data/data/$APP_PACKAGE", self.app_data),
                 ("LEGACY_DATA=/data/data/$LEGACY_PACKAGE", self.legacy_data),
                 ("SYSAPK=/system/app/Launchpad.apk", self.system_apk),
-                ("BACKUP_DIR=/data/nemesis/backup/paytondev.launchpad", self.backup),
-                ("WORK=/data/local/tmp/launchpad", self.work),
-                ("STAGE=/data/local/tmp/nemesis/stage/paytondev.launchpad", self.stage)):
+                ("BACKUP_DIR=/data/nemesis/backup/kr.neev.preconditioning", self.backup),
+                ("WORK=/data/local/tmp/preconditioning", self.work),
+                ("STAGE=/data/local/tmp/nemesis/stage/kr.neev.preconditioning", self.stage)):
             self.assertEqual(common.count("\n" + line + "\n"), 1, line)
             common = common.replace("\n" + line + "\n", "\n" + line.split("=")[0] + "=" + quote(value) + "\n")
         self.common = common + HOOK_STUBS
         (self.scripts / "common.sh").write_text(self.common, newline="\n")
-        source = ". /data/nemesis/apps/paytondev.launchpad/scripts/common.sh"
+        (self.root / "package/star").mkdir()
+        shutil.copy2(ROOT / "tune-service/star/uninstall.sh", self.root / "package/star/uninstall.sh")
+        (self.root / "package/star/install.sh").write_text(
+            '#!/bin/sh\necho star-install >> "$TEST_FOLDER/calls"\nexit "${TEST_STAR_FAIL:-0}"\n')
+        source = ". /data/nemesis/apps/kr.neev.preconditioning/scripts/common.sh"
         for hook in ("preinstall", "postinstall", "preuninstall"):
             text = (ROOT / f"tune-service/scripts/{hook}.sh").read_text()
             if hook == "preinstall":
@@ -423,6 +427,29 @@ class PackageHooksTest(unittest.TestCase):
 
     # postinstall
 
+    def test_star_install_is_synchronous_and_skipped_before_android_boot(self):
+        product = "NEEV.KOR.0000.V039.001.260902"
+        result = self.hook("postinstall", TEST_BOOT="0", TEST_PRODUCT=product)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("reinstall after boot", result.stdout)
+        self.assertNotIn("star-install", self.lines("calls"))
+        result = self.hook("postinstall", TEST_PRODUCT=product, TEST_PM_PATH=USER_APK)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.lines("calls")[-1], "star-install")
+        self.assertIn("restart head unit", result.stdout)
+
+    def test_star_install_failure_keeps_app_install_successful(self):
+        result = self.hook("postinstall", TEST_PRODUCT="NEEV.KOR.0000.V039.001.260902",
+                           TEST_PM_PATH=USER_APK, TEST_STAR_FAIL="1")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("star integration unavailable; app installed", result.stdout)
+        self.assertIn("star-install", self.lines("calls"))
+
+    def test_unsupported_car_never_attempts_star_install(self):
+        result = self.hook("postinstall", TEST_PRODUCT="OTHER.CAR", TEST_PM_PATH=USER_APK)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("star-install", self.lines("calls"))
+
     def test_postinstall_restores_settings_then_starts_the_service_last(self):
         self.write_prefs(self.prefs_backup)
         self.app_data.mkdir(parents=True)
@@ -472,7 +499,7 @@ class PackageHooksTest(unittest.TestCase):
     # USB verification and the manual installer
 
     def test_usb_verification_requires_a_user_app_and_no_1x_copy(self):
-        library = (ROOT / "usb/launchpad/lib.sh").read_text()
+        library = (ROOT / "usb/preconditioning/lib.sh").read_text()
         start = library.index("verify_installed() {")
         end = library.index("\n}", start) + 2
         script = self.root / "verify.sh"
@@ -497,19 +524,19 @@ verify_installed
     def run_install(self, **env):
         drive = self.root / "drive"
         if not drive.exists():
-            (drive / "launchpad").mkdir(parents=True)
+            (drive / "preconditioning").mkdir(parents=True)
             (drive / "packages").mkdir()
-            (drive / "packages/paytondev.launchpad.zip").write_bytes(b"package")
+            (drive / "packages/kr.neev.preconditioning.zip").write_bytes(b"package")
             for name in ("install.sh", "lib.sh"):
-                (drive / "launchpad" / name).write_text(
-                    (ROOT / "usb/launchpad" / name).read_text(), newline="\n")
-            (drive / "launchpad/common.sh").write_text(self.common, newline="\n")
-        result = run(drive / "launchpad/install.sh", TEST_FOLDER=shell_path(self.root), **env)
-        log = drive / "launchpad-install.log"
+                (drive / "preconditioning" / name).write_text(
+                    (ROOT / "usb/preconditioning" / name).read_text(), newline="\n")
+            (drive / "preconditioning/common.sh").write_text(self.common, newline="\n")
+        result = run(drive / "preconditioning/install.sh", TEST_FOLDER=shell_path(self.root), **env)
+        log = drive / "preconditioning-install.log"
         return result, log.read_text() if log.exists() else ""
 
     def test_usb_install_and_update(self):
-        package = shell_path(self.root / "drive/packages/paytondev.launchpad.zip")
+        package = shell_path(self.root / "drive/packages/kr.neev.preconditioning.zip")
         for installed, command in (("", "install " + package), ("1", "install --update " + package)):
             with self.subTest(installed=bool(installed)):
                 (self.root / "nemesis-calls").unlink(missing_ok=True)
@@ -518,7 +545,7 @@ verify_installed
                                                TEST_PM_PATH=USER_APK)
                 self.assertEqual(result.returncode, 0, log)
                 self.assertIn(command, self.lines("nemesis-calls"))
-                self.assertIn("ok: com.paytondev.precondition installed at /data/app/", log)
+                self.assertIn("ok: kr.neev.preconditioning installed at /data/app/", log)
 
 
 if __name__ == "__main__":

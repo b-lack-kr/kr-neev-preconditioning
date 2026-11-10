@@ -3,7 +3,7 @@
 # pm uninstall, which deletes the app and its data. Also runs on the OLD package
 # during `nemesis install --update`, after the new package has been extracted to
 # $STAGE; NEMESIS then uninstalls the old APK and installs the new one.
-. /data/nemesis/apps/paytondev.launchpad/scripts/common.sh
+. /data/nemesis/apps/kr.neev.preconditioning/scripts/common.sh
 
 log "preuninstall: removing daemon dalvik cache"
 rm -f "$DEXCACHE"
@@ -14,6 +14,13 @@ if [ -f "$STAGE/NEMESIS.data" ]; then
     force_stop_app
     backup_prefs || log "preuninstall: WARN: settings not saved; the new version starts with defaults"
     exit 0
+fi
+
+# Updates above keep the integration in place. A true uninstall restores only
+# our unchanged transaction, and refuses to remove a currently selected key.
+if ! sh "$HERE/star/uninstall.sh"; then
+    log "preuninstall: star removal blocked; choose another star function and check map conflicts"
+    exit 1
 fi
 
 force_stop_app

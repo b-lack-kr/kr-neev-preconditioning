@@ -1,0 +1,26 @@
+{
+  "id": "neev-star-precondition",
+  "name": "아이오닉5 별표 프리컨디셔닝",
+  "version": "0.1.0",
+  "hmgapi": ">=1.0.2",
+  "authors": ["Local Korean adaptation"],
+  "license": "AGPL-3.0-or-later",
+  "description": "아이오닉5 프리컨디셔닝",
+  "system": {
+    "product": "NEEV.KOR.0000.V039.001.260902",
+    "platform": "tcc803x",
+    "android": "4.4.2"
+  },
+  "provides": {
+    "star_key": [
+      {
+        "id": "precondition",
+        "title": "프리컨디셔닝",
+        "activity": {
+          "package": "kr.neev.preconditioning",
+          "class": "kr.neev.preconditioning.MainActivity"
+        }
+      }
+    ]
+  }
+}

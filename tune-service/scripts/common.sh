@@ -2,43 +2,42 @@
 export PATH=/sbin:/vendor/bin:/system/sbin:/system/bin:/system/xbin
 export LD_LIBRARY_PATH=/vendor/lib:/system/lib
 umask 022
-HERE=/data/nemesis/apps/paytondev.launchpad
+HERE=/data/nemesis/apps/kr.neev.preconditioning
 NEMESIS=/system/xbin/nemesis
-# The signed Launchpad APK. NEMESIS installs it as a normal Android app
+# The signed Preconditioning APK. NEMESIS installs it as a normal Android app
 # ([app.0] kind=apk: pm install on install, pm uninstall on removal), and the knob
 # daemon uses this same file as its dex container (CLASSPATH under app_process).
-DEX=$HERE/app/Launchpad.apk
+DEX=$HERE/app/Preconditioning.apk
 # dalvik-cache entry app_process may create for that dex (named after its path).
-DEXCACHE=/data/dalvik-cache/data@nemesis@apps@paytondev.launchpad@app@Launchpad.apk@classes.dex
-# The Android package. Its classes stay in the Java package com.paytondev.launchpad,
-# so components need full class names.
-APP_PACKAGE=com.paytondev.precondition
+DEXCACHE=/data/dalvik-cache/data@nemesis@apps@kr.neev.preconditioning@app@Preconditioning.apk@classes.dex
+# Independent Android package and Java namespace; components use full class names.
+APP_PACKAGE=kr.neev.preconditioning
 APP_DATA=/data/data/$APP_PACKAGE
 # Started once after install: it re-arms a restored schedule, and starting any
 # component takes a freshly installed package out of Android's "stopped" state so
 # BootReceiver gets BOOT_COMPLETED. Nothing may force-stop the app after that.
-SERVICE_COMPONENT=$APP_PACKAGE/com.paytondev.launchpad.PreconditioningService
-# Launchpad 1.x: a different Android package, copied into /system/app. 2.x never
-# writes /system: this file is only ever removed, once, when moving 1.x over.
-# Android keeps the 1.x package (and its data) until the next boot even after the
-# file is gone, which is why 2.x has its own package name: it installs right away.
+SERVICE_COMPONENT=$APP_PACKAGE/kr.neev.preconditioning.PreconditioningService
+# Explicit upstream legacy migration only: Launchpad 1.x used this system APK.
+# The independent app never writes a new system APK; the old copy is removed once.
+# Do not rename LEGACY_PACKAGE or SYSAPK to the new package.
 LEGACY_PACKAGE=com.paytondev.launchpad
 LEGACY_DATA=/data/data/$LEGACY_PACKAGE
 SYSAPK=/system/app/Launchpad.apk
 # Persistent state (NEMESIS's /data/nemesis/backup/<id> convention). Survives
 # reboots; removed on uninstall.
-BACKUP_DIR=/data/nemesis/backup/paytondev.launchpad
+BACKUP_DIR=/data/nemesis/backup/kr.neev.preconditioning
 PREFS_BACKUP=$BACKUP_DIR/prefs
-# The app's SharedPreferences files, with the .bak copy Android keeps while a
+# Historical preference filenames are retained for explicit upstream 1.x migration.
+# These now live inside this app's own Android data directory. The .bak copy keeps a
 # write is in progress (a .bak wins over its .xml when the app loads them).
 PREF_FILES="launchpad.xml launchpad.xml.bak launchpad_preconditioning.xml launchpad_preconditioning.xml.bak"
-# Temporary files only (cleared on reboot). 1.x staged its /system copy here.
-WORK=/data/local/tmp/launchpad
+# This independent package's temporary files only (cleared on reboot).
+WORK=/data/local/tmp/preconditioning
 # NEMESIS extracts an incoming package here before running the old package's
 # uninstall hooks, so its presence during preuninstall means "update".
-STAGE=/data/local/tmp/nemesis/stage/paytondev.launchpad
+STAGE=/data/local/tmp/nemesis/stage/kr.neev.preconditioning
 
-log() { echo "$(date '+%Y-%m-%d %H:%M:%S') launchpad $*"; }
+log() { echo "$(date '+%Y-%m-%d %H:%M:%S') preconditioning $*"; }
 
 # KitKat toolbox cmp has no -s option. Preserve its exit status and silence I/O.
 files_equal() { cmp "$1" "$2" >/dev/null 2>&1; }
@@ -117,7 +116,7 @@ prefs_backed_up() {
 
 # Only ever deletes this package's own backup folder.
 remove_backup() {
-    case "$BACKUP_DIR" in /*/backup/paytondev.launchpad) ;; *) return 1 ;; esac
+    case "$BACKUP_DIR" in /*/backup/kr.neev.preconditioning) ;; *) return 1 ;; esac
     rm -rf "$BACKUP_DIR"
 }
 
@@ -183,8 +182,8 @@ restore_prefs() {
     return 0
 }
 
-# Remove the 1.x copy at /system/app/Launchpad.apk: the only /system change 2.x
-# makes, and only once. /system is writable only for this and set back right after.
+# Remove the upstream 1.x copy at /system/app/Launchpad.apk once.
+# /system is writable only for this legacy cleanup and set back right after.
 remove_legacy_sysapk() {
     [ -f "$SYSAPK" ] || return 0
     force_stop_app "$LEGACY_PACKAGE"

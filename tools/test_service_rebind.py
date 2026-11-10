@@ -87,13 +87,13 @@ public abstract class Service extends Context { public static final int START_NO
  public int onStartCommand(Intent i,int f,int s){return START_NOT_STICKY;}
  public final void stopSelf(){stops++;} public final void startForeground(int id,Notification n){fg=true;}
  public final void stopForeground(boolean b){fg=false;} }""",
- 'com/paytondev/launchpad/R': 'final class R { static final class drawable { static final int ic_preconditioning=1; } }',
- 'com/paytondev/launchpad/MainActivity': 'public class MainActivity {}',
- 'com/paytondev/launchpad/WallClock': """public final class WallClock { public static long offset=1793613600000L;
+ 'kr/neev/preconditioning/R': 'final class R { static final class drawable { static final int ic_preconditioning=1; } }',
+ 'kr/neev/preconditioning/MainActivity': 'public class MainActivity {}',
+ 'kr/neev/preconditioning/WallClock': """public final class WallClock { public static long offset=1793613600000L;
  static long now(){return offset+android.os.SystemClock.now;} }""",
- 'com/paytondev/launchpad/VehicleClientFactory': """final class VehicleClientFactory { static FakeVehicle current;
+ 'kr/neev/preconditioning/VehicleClientFactory': """final class VehicleClientFactory { static FakeVehicle current;
  static VehiclePort create(){return current;} }""",
- 'com/paytondev/launchpad/FakeVehicle': """final class FakeVehicle implements VehiclePort { int polls, prechecks, starts, ready=1, minimum=15; Integer outside=1;
+ 'kr/neev/preconditioning/FakeVehicle': """final class FakeVehicle implements VehiclePort { int polls, prechecks, starts, ready=1, minimum=15; Integer outside=1;
  public String unavailableReason(){return "";}
  public Reading read(){return new Reading(2,0,ready,-1);}
  public Integer readMinimumBatteryTemperatureC(){prechecks++;return minimum;}
@@ -106,8 +106,8 @@ for name, body in stubs.items():
     path.parent.mkdir(parents=True, exist_ok=True)
     package = name.rsplit('/', 1)[0].replace('/', '.')
     path.write_text(f'package {package};\n' + body)
-test = work/'src/com/paytondev/launchpad/ServiceRebindTest.java'
-test.write_text("""package com.paytondev.launchpad;
+test = work/'src/kr/neev/preconditioning/ServiceRebindTest.java'
+test.write_text("""package kr.neev.preconditioning;
 import android.content.Context; import android.content.Intent; import android.os.*;
 import android.app.AlarmManager; import android.app.NotificationManager;
 import java.lang.reflect.Field;
@@ -149,14 +149,14 @@ public class ServiceRebindTest {
   check(!bound(s)&&s.stops==0,"service stays alive for the session after unbind");
   Handler.advance(35_000); check(car.polls==beforeLeave,"no display polling while away");passed++;
   returnToApp(s);
-  check(bound(s),"returning to Launchpad during the session rebinds");
-  check(car.polls==beforeLeave+1,"returning to Launchpad polls immediately");
+  check(bound(s),"returning to Preconditioning during the session rebinds");
+  check(car.polls==beforeLeave+1,"returning to Preconditioning polls immediately");
   Handler.advance(10_500); check(car.polls==beforeLeave+2,"poll is rescheduled after rebind");
   check(requested(s),"rebind leaves the session requested");passed++;
   FakeVehicle idle=new FakeVehicle(); PreconditioningService t=create(idle); unbind(t);
   check(t.stops==1&&!bound(t),"idle service still stops after unbind");passed++;
 
-  // Start-by fires at target - 70 s while Launchpad is closed.
+  // Start-by fires at target - 70 s while Preconditioning is closed.
   reset(); car=new FakeVehicle(); s=create(car);
   long target=wall()+10*MIN; command(s,arm("START_BY",target));
   PreconditioningSchedule armed=schedule(s);
@@ -233,14 +233,14 @@ public class ServiceRebindTest {
   System.out.println(passed+" service scenarios passed (host fixtures, no car access)");
  }
 }""")
-production = ROOT/'app/src/main/java/com/paytondev/launchpad'
+production = ROOT/'app/src/main/java/kr/neev/preconditioning'
 names = ('PreconditioningService', 'PreconditioningController', 'PreconditioningSnapshot', 'VehiclePort',
          'BatteryTemperature', 'BatteryTemperatureReading', 'TemperatureHistory', 'PreconditioningSchedule',
          'ArriveByPlanner', 'ScheduleLog', 'ScheduleFormat')
 sources = [str(p) for p in (work/'src').rglob('*.java')] + [str(production/f'{n}.java') for n in names]
 classes = work/'classes'; classes.mkdir()
 subprocess.run([JAVAC, '-d', str(classes), *sources], check=True, timeout=60)
-result = subprocess.run([JAVA, '-cp', str(classes), 'com.paytondev.launchpad.ServiceRebindTest'],
+result = subprocess.run([JAVA, '-cp', str(classes), 'kr.neev.preconditioning.ServiceRebindTest'],
                         check=True, capture_output=True, text=True, timeout=15)
 (work/'results.json').write_text(json.dumps({'passed': True, 'scenarios': 13,
     'scope': 'host Android fixtures, no car access', 'output': result.stdout}, indent=2) + '\n')

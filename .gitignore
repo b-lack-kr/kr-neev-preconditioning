@@ -4,6 +4,8 @@ local.properties
 **/build/
 dist/
 .DS_Store
+__pycache__/
+*.pyc
 .idea/
 *.iml
 # Signing material and private environment files

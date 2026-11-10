@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "id": "neev-star-precondition",
+  "version": "0.1.0",
+  "uuid": "8843fd55-d673-8045-a574-11e4e09794b0",
+  "key": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEYZWAvve0wJE6vwNIGrQGIzCIKeF40KRDZMjsYw6fAkTkm0eRTryD3Lkv9fNFnUw+WoWT5iD8tSFz7ah9NN0NQw==",
+  "files": {
+    "NOTICE.txt": "3ee78a8278ae651a7e9fb31b81b59525c3a646b935bd8f3bb99b0f23f5b66db1",
+    "mod.json": "f2dd31d560acdabfedd078f5cd3c5dc709942f616b32f24f23a975850cc9cf2d"
+  }
+}
